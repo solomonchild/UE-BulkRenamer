@@ -12,7 +12,9 @@ static const FName BulkRenamerTabName("BulkRenamer");
 static void BuildMenu(class FMenuBuilder& menuBuilder)
 {
 	menuBuilder.BeginSection("TEST");
-	menuBuilder.AddEditableText(LOCTEXT("label", "Label"), LOCTEXT("hint", "Hint"), FSlateIcon(), LOCTEXT("Hi", "Edit"));
+	//menuBuilder.AddEditableText(LOCTEXT("label", "Label"), LOCTEXT("hint", "Hint"), FSlateIcon(), LOCTEXT("Hi", "Edit"));
+	FUIAction action{};
+	menuBuilder.AddMenuEntry(LOCTEXT("label", "Bulk Edit"), LOCTEXT("tooltip", "ToolTip"), FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Rename"), action);
 	menuBuilder.EndSection();
 }
 
@@ -23,7 +25,9 @@ static TSharedRef<FExtender> OnExtendLevelEditorMenu(const TSharedRef<FUICommand
 	Extender->AddMenuExtension (
 		//"LevelEditor.SceneOutlinerContextMenu", 
 		//"WindowLayout",
-		"ActorTypeTools",
+		//"ActorTypeTools",
+		//"ActorOptions",
+		"EditAsset",
 		EExtensionHook::After, 
 		nullptr, 
 		FMenuExtensionDelegate::CreateStatic(&BuildMenu));
