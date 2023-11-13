@@ -9,13 +9,24 @@ static const FName BulkRenamerTabName("BulkRenamer");
 
 #define LOCTEXT_NAMESPACE "FBulkRenamerModule"
 
-static void BuildMenu(class FMenuBuilder& menuBuilder)
+
+static void BuildMenu(class FMenuBuilder& menuBuilder, TArray<AActor*> SelectedActors)
 {
-	menuBuilder.BeginSection("TEST");
-	//menuBuilder.AddEditableText(LOCTEXT("label", "Label"), LOCTEXT("hint", "Hint"), FSlateIcon(), LOCTEXT("Hi", "Edit"));
-	FUIAction action{};
-	menuBuilder.AddMenuEntry(LOCTEXT("label", "Bulk Edit"), LOCTEXT("tooltip", "ToolTip"), FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Rename"), action);
-	menuBuilder.EndSection();
+			menuBuilder.AddEditableText(
+				NSLOCTEXT("BulkRelabel", "MenuLabel", "New label:"), 
+				NSLOCTEXT("BulkRelabel", "MenuHint", "A label for actor(s)"), 
+				FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Edit"), 
+				NSLOCTEXT("BulkRelabel", "DefaultText", ""),
+
+				FOnTextCommitted::CreateLambda([=](const FText& name, ETextCommit::Type type) {
+					if (type == ETextCommit::OnEnter) {
+						unsigned actorIndex = 0;
+						for (auto* actor : SelectedActors) {
+							auto newName = FString::Printf(TEXT("%s%u"), *name.ToString(), actorIndex++);
+							actor->SetActorLabel(*newName);
+						}
+					}
+			}));
 }
 
 
@@ -23,24 +34,15 @@ static TSharedRef<FExtender> OnExtendLevelEditorMenu(const TSharedRef<FUICommand
 {
 	TSharedRef<FExtender> Extender(new FExtender());
 	Extender->AddMenuExtension (
-		//"LevelEditor.SceneOutlinerContextMenu", 
-		//"WindowLayout",
-		//"ActorTypeTools",
-		//"ActorOptions",
-		"EditAsset",
+		"ActorOptions",
 		EExtensionHook::After, 
 		nullptr, 
-		FMenuExtensionDelegate::CreateStatic(&BuildMenu));
+		FMenuExtensionDelegate::CreateStatic(&BuildMenu, SelectedActors));
 	return Extender;
 }
 
 void FBulkRenamerModule::OnPostEngineInit()
 {
-	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
-	auto& allExtenders = LevelEditorModule.GetAllLevelViewportContextMenuExtenders();
-
-	auto LevelEditorMenuExtenderDelegate = FLevelEditorModule::FLevelViewportMenuExtender_SelectedActors::CreateStatic(OnExtendLevelEditorMenu);
-	allExtenders.Add(LevelEditorMenuExtenderDelegate);
 }
 
 void FBulkRenamerModule::StartupModule()
@@ -61,7 +63,13 @@ void FBulkRenamerModule::StartupModule()
 
 	UToolMenus::RegisterStartupCallback(FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FBulkRenamerModule::RegisterMenus));
 
-	FCoreDelegates::OnPostEngineInit.AddRaw(this, &FBulkRenamerModule::OnPostEngineInit);
+	//FCoreDelegates::OnPostEngineInit.AddRaw(this, &FBulkRenamerModule::OnPostEngineInit);
+
+	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
+	auto& allExtenders = LevelEditorModule.GetAllLevelViewportContextMenuExtenders();
+
+	auto LevelEditorMenuExtenderDelegate = FLevelEditorModule::FLevelViewportMenuExtender_SelectedActors::CreateStatic(OnExtendLevelEditorMenu);
+	allExtenders.Add(LevelEditorMenuExtenderDelegate);
 }
 
 
